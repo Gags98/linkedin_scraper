@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from time import sleep
+from typing import List
 
 from selenium.webdriver import Chrome
 
@@ -10,25 +11,33 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-
 @dataclass
 class Contact:
     name: str = None
     occupation: str = None
     url: str = None
 
-
 @dataclass
 class Institution:
     institution_name: str = None
+    institution_description: str = None
     linkedin_url: str = None
     website: str = None
     industry: str = None
     type: str = None
     headquarters: str = None
+    institution_location: str = None
+    institution_followers: str = None
+    institution_employees: str = None
+    institution_overivew: str = None
     company_size: int = None
     founded: int = None
-
+    funding_title: str = None
+    funding_series: str = None
+    funding_date: str = None
+    funding_amount: str = None
+    size: str = None
+    specialties: List[str] = None
 
 @dataclass
 class Experience(Institution):
@@ -38,7 +47,7 @@ class Experience(Institution):
     position_title: str = None
     duration: str = None
     location: str = None
-
+    skills: List[str] = None
 
 @dataclass
 class Education(Institution):
