@@ -463,11 +463,11 @@ class Person(Scraper):
             "window.scrollTo(0, Math.ceil(document.body.scrollHeight/1.5));"
         )
 
-        # self.get_experiences()
+        self.get_experiences()
 
-        # self.get_educations()
+        self.get_educations()
 
-        # self.get_company_details()
+        self.get_company_details()
 
         self.get_skills()
 
