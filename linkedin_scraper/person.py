@@ -19,7 +19,6 @@ class Person(Scraper):
         self,
         linkedin_url=None,
         name=None,
-        about=None,
         experiences=None,
         educations=None,
         interests=None,
@@ -35,7 +34,7 @@ class Person(Scraper):
     ):
         self.linkedin_url = linkedin_url
         self.name = name
-        self.about = about or []
+        self.about = ""
         self.experiences = experiences or []
         self.educations = educations or []
         self.interests = interests or []
@@ -46,6 +45,9 @@ class Person(Scraper):
         self.company_details = []
         self.skills = []
         self.languages = []
+        self.phone = ""
+        self.email = ""
+        self.address = ""
 
         if driver is None:
             try:
@@ -67,9 +69,6 @@ class Person(Scraper):
 
         if scrape:
             self.scrape(close_on_complete)
-
-    def add_about(self, about):
-        self.about.append(about)
 
     def add_experience(self, experience):
         self.experiences.append(experience)
@@ -136,9 +135,14 @@ class Person(Scraper):
             position_summary_text = position_details_list[1] if len(position_details_list) > 1 else None
             outer_positions = position_summary_details.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
 
+            commitment = ""
+
             if len(outer_positions) == 4:
                 position_title = outer_positions[0].find_element(By.TAG_NAME,"span").text
                 company = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                if "·" in company:
+                    commitment = company.split(" · ")[1]
+                    company = company.split(" · ")[0]
                 work_times = outer_positions[2].find_element(By.TAG_NAME,"span").text
                 location = outer_positions[3].find_element(By.TAG_NAME,"span").text
             elif len(outer_positions) == 3:
@@ -170,7 +174,8 @@ class Person(Scraper):
                     duration=duration,
                     location=location,
                     institution_name=company,
-                    linkedin_url=company_linkedin_url
+                    linkedin_url=company_linkedin_url,
+                    commitment=commitment
                 )
                 self.add_experience(experience)
             elif position_summary_text and len(position_summary_text.find_element(By.CLASS_NAME,"pvs-list").find_element(By.CLASS_NAME,"pvs-list").find_elements(By.XPATH,"li")) > 1:
@@ -179,13 +184,18 @@ class Person(Scraper):
                     temp_desc = ""
                     skills = []
                     res = description.find_element(By.TAG_NAME,"a").find_elements(By.XPATH,"*")
-                    position_title_elem = res[0] if len(res) > 0 else None
-                    if 'Full-time' in res[1].find_element(By.XPATH,"*").text or 'Part-time' in res[1].find_element(By.XPATH,"*").text or 'Contract' in res[1].find_element(By.XPATH,"*").text:
+                    position_title_elem = res[0].find_element(By.TAG_NAME,"span").text
+                    if len(res) == 4:
+                        commitment = res[1].find_element(By.XPATH,"*").text
                         work_times_elem = res[2] if len(res) > 2 else None
                         location_elem = res[3] if len(res) > 3 else None
-                    else:
-                        work_times_elem = res[1] if len(res) > 1 else None
-                        location_elem = res[2] if len(res) > 2 else None
+                    elif len(res) == 3:
+                        if "·" in res[1].find_element(By.XPATH,"*").text:
+                            work_times_elem = res[1]
+                            location_elem = res[2]
+                        elif "·" in res[2].find_element(By.XPATH,"*").text:
+                            commitment = res[1].find_element(By.XPATH,"*").text
+                            work_times_elem = res[2]
 
                     temp = description.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")
                     if len(temp) > 1:
@@ -203,7 +213,7 @@ class Person(Scraper):
                                 temp_desc = text
 
                     location = location_elem.find_element(By.XPATH,"*").text if location_elem else None
-                    position_title = position_title_elem.find_element(By.TAG_NAME,"span").text if position_title_elem else ""
+                    position_title = position_title_elem
                     work_times = work_times_elem.find_element(By.XPATH,"*").text if work_times_elem else ""
                     times = work_times.split("·")[0].strip() if work_times else ""
                     duration = work_times.split("·")[1].strip() if len(work_times.split("·")) > 1 else None
@@ -219,7 +229,8 @@ class Person(Scraper):
                         description=temp_desc,
                         institution_name=company,
                         linkedin_url=company_linkedin_url,
-                        skills=skills
+                        skills=skills,
+                        commitment=commitment
                     )
                     self.add_experience(experience)
             else:
@@ -247,7 +258,8 @@ class Person(Scraper):
                     description=temp_desc,
                     institution_name=company,
                     linkedin_url=company_linkedin_url,
-                    skills=skills
+                    skills=skills,
+                    commitment=commitment
                 )
                 self.add_experience(experience)
 
@@ -367,6 +379,11 @@ class Person(Scraper):
 
             institution_name = outer_positions[0].find_element(By.TAG_NAME,"span").text
             degree = outer_positions[1].find_element(By.TAG_NAME,"span").text
+            major = ""
+
+            if "Degree, " in degree:
+                major = degree.split("Degree, ")[1]
+                degree = degree.split(major)[0][:-2]
 
             if len(outer_positions) > 2:
                 times = outer_positions[2].find_element(By.TAG_NAME,"span").text
@@ -385,7 +402,8 @@ class Person(Scraper):
                 description=description,
                 degree=degree,
                 institution_name=institution_name,
-                linkedin_url=institution_linkedin_url
+                linkedin_url=institution_linkedin_url,
+                major=major
             )
             self.add_education(education)
 
@@ -426,13 +444,25 @@ class Person(Scraper):
         self.name = top_panels[0].find_elements(By.XPATH,"*")[0].find_element(By.TAG_NAME,"h1").text
         self.location = top_panels[1].find_elements(By.XPATH,"*")[0].text
 
+    def get_contact_info(self):
+        contact_info_span = self.driver.find_element(By.ID,"top-card-text-details-contact-info")
+        contact_info_span.click()
+        contact_info = self.wait_for_element_to_load(by=By.CLASS_NAME, name="section-info")
+        for info in contact_info.find_elements(By.XPATH,"*"):
+            if "ci-phone" in info.get_attribute("class"):
+                self.phone = info.find_element(By.TAG_NAME,"span").text
+            elif "ci-address" in info.get_attribute("class"):
+                self.address = info.find_element(By.TAG_NAME,"a").text
+            elif "ci-email" in info.get_attribute("class"):
+                self.email = info.find_element(By.TAG_NAME,"a").text
+        close_contact_info = self.driver.find_element(By.CLASS_NAME,"artdeco-modal__dismiss")
+        close_contact_info.click()
 
     def get_about(self):
-        try:
-            about = self.driver.find_element(By.ID,"about").find_element(By.XPATH,"..").find_element(By.CLASS_NAME,"display-flex").text
-        except NoSuchElementException:
-            about=None
-        self.about = about
+        about_section = self.driver.find_elements(By.ID,"about")
+        if len(about_section) == 1:
+            about_section = about_section[0]
+            self.about = about_section.find_element(By.XPATH,"..").find_element(By.CLASS_NAME,"display-flex").find_element(By.TAG_NAME,"span").text
 
     def scrape_logged_in(self, close_on_complete=True):
         driver = self.driver
@@ -447,104 +477,26 @@ class Person(Scraper):
             )
         )
         self.focus()
-        self.wait(5)
+        self.wait(2)
 
         # get name and location
         self.get_name_and_location()
 
         self.open_to_work = self.is_open_to_work()
 
-        # get about
         self.get_about()
-        driver.execute_script(
-            "window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));"
-        )
-        driver.execute_script(
-            "window.scrollTo(0, Math.ceil(document.body.scrollHeight/1.5));"
-        )
+
+        self.get_contact_info()
 
         self.get_experiences()
 
-        self.get_educations()
-
         self.get_company_details()
+
+        self.get_educations()
 
         self.get_skills()
 
         self.get_languages()
-
-        # driver.get(self.linkedin_url)
-        #
-        # # get interest
-        # try:
-        #
-        #     _ = WebDriverWait(driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until(
-        #         EC.presence_of_element_located(
-        #             (
-        #                 By.XPATH,
-        #                 "//*[@class='pv-profile-section pv-interests-section artdeco-container-card artdeco-card ember-view']",
-        #             )
-        #         )
-        #     )
-        #     interestContainer = driver.find_element(By.XPATH,
-        #         "//*[@class='pv-profile-section pv-interests-section artdeco-container-card artdeco-card ember-view']"
-        #     )
-        #     for interestElement in interestContainer.find_elements(By.XPATH,
-        #         "//*[@class='pv-interest-entity pv-profile-section__card-item ember-view']"
-        #     ):
-        #         interest = Interest(
-        #             interestElement.find_element(By.TAG_NAME, "h3").text.strip()
-        #         )
-        #         self.add_interest(interest)
-        # except:
-        #     pass
-        #
-        # # get accomplishment
-        # try:
-        #     _ = WebDriverWait(driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until(
-        #         EC.presence_of_element_located(
-        #             (
-        #                 By.XPATH,
-        #                 "//*[@class='pv-profile-section pv-accomplishments-section artdeco-container-card artdeco-card ember-view']",
-        #             )
-        #         )
-        #     )
-        #     acc = driver.find_element(By.XPATH,
-        #         "//*[@class='pv-profile-section pv-accomplishments-section artdeco-container-card artdeco-card ember-view']"
-        #     )
-        #     for block in acc.find_elements(By.XPATH,
-        #         "//div[@class='pv-accomplishments-block__content break-words']"
-        #     ):
-        #         category = block.find_element(By.TAG_NAME, "h3")
-        #         for title in block.find_element(By.TAG_NAME,
-        #             "ul"
-        #         ).find_elements(By.TAG_NAME, "li"):
-        #             accomplishment = Accomplishment(category.text, title.text)
-        #             self.add_accomplishment(accomplishment)
-        # except:
-        #     pass
-
-        # get connections
-        # try:
-        #     driver.get("https://www.linkedin.com/mynetwork/invite-connect/connections/")
-        #     _ = WebDriverWait(driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until(
-        #         EC.presence_of_element_located((By.CLASS_NAME, "mn-connections"))
-        #     )
-        #     connections = driver.find_element(By.CLASS_NAME, "mn-connections")
-        #     if connections is not None:
-        #         for conn in connections.find_elements(By.CLASS_NAME, "mn-connection-card"):
-        #             anchor = conn.find_element(By.CLASS_NAME, "mn-connection-card__link")
-        #             url = anchor.get_attribute("href")
-        #             name = conn.find_element(By.CLASS_NAME, "mn-connection-card__details").find_element(By.CLASS_NAME, "mn-connection-card__name").text.strip()
-        #             occupation = conn.find_element(By.CLASS_NAME, "mn-connection-card__details").find_element(By.CLASS_NAME, "mn-connection-card__occupation").text.strip()
-        #
-        #             contact = Contact(name=name, occupation=occupation, url=url)
-        #             self.add_contact(contact)
-        # except:
-        #     connections = None
-        #
-        # if close_on_complete:
-        #     driver.quit()
 
     @property
     def company(self):
@@ -572,6 +524,9 @@ class Person(Scraper):
         return "<Person {name}\n\nAbout\n{about}\n\nExperience\n{exp}\n\nEducation\n{edu}\n\nInterest\n{int}\n\nAccomplishments\n{acc}\n\nCompanies\n{companies}\n\nLanguages\n{lang}\n\nSkills\n{skills}>".format(
             name=self.name,
             about=self.about,
+            email=self.email,
+            address=self.address,
+            phone=self.phone,
             exp=self.experiences,
             edu=self.educations,
             int=self.interests,
