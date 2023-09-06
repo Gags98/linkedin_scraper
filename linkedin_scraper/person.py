@@ -48,6 +48,7 @@ class Person(Scraper):
         self.phone = ""
         self.email = ""
         self.address = ""
+        self.location = ""
 
         if driver is None:
             try:
@@ -163,8 +164,9 @@ class Person(Scraper):
             times = work_times.split("·")[0].strip() if work_times else ""
             duration = work_times.split("·")[1].strip() if len(work_times.split("·")) > 1 else None
 
-            from_date = " ".join(times.split(" ")[:2]) if times else ""
-            to_date = " ".join(times.split(" ")[3:]) if times else ""
+            if " - " in times:
+                from_date = "".join(times.split(" - ")[0]) if times else ""
+                to_date = "".join(times.split(" - ")[1]) if times else ""
 
             if position_summary_text is None:
                 experience = Experience(
@@ -178,6 +180,7 @@ class Person(Scraper):
                     commitment=commitment
                 )
                 self.add_experience(experience)
+            # the following elif controls the positions which are in the same company and follow each other, i.e. a list of positions in a company
             elif position_summary_text and len(position_summary_text.find_element(By.CLASS_NAME,"pvs-list").find_element(By.CLASS_NAME,"pvs-list").find_elements(By.XPATH,"li")) > 1:
                 descriptions = position_summary_text.find_element(By.CLASS_NAME,"pvs-list").find_element(By.CLASS_NAME,"pvs-list").find_elements(By.XPATH,"li")
                 for description in descriptions:
@@ -185,6 +188,8 @@ class Person(Scraper):
                     skills = []
                     res = description.find_element(By.TAG_NAME,"a").find_elements(By.XPATH,"*")
                     position_title_elem = res[0].find_element(By.TAG_NAME,"span").text
+                    work_times_elem = None
+                    location_elem = None
                     if len(res) == 4:
                         commitment = res[1].find_element(By.XPATH,"*").text
                         work_times_elem = res[2] if len(res) > 2 else None
@@ -196,6 +201,9 @@ class Person(Scraper):
                         elif "·" in res[2].find_element(By.XPATH,"*").text:
                             commitment = res[1].find_element(By.XPATH,"*").text
                             work_times_elem = res[2]
+                    elif len(res) == 2:
+                        if "·" in res[1].find_element(By.XPATH,"*").text:
+                            work_times_elem = res[1]
 
                     temp = description.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")
                     if len(temp) > 1:
@@ -268,6 +276,11 @@ class Person(Scraper):
             if "linkedin.com/company" in url:
                 self.driver.get(url + '/about/')
                 self.focus()
+                WebDriverWait(self.driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until( lambda driver:
+                    driver.find_elements(By.CLASS_NAME,"artdeco-empty-state") or
+                    driver.find_elements(By.CLASS_NAME,"org-unclaimable-page-module") or
+                    driver.find_elements(By.TAG_NAME,"main")
+                )
                 unavailable = self.driver.find_elements(By.CLASS_NAME, "artdeco-empty-state")
                 if len(unavailable) == 1:
                     continue
@@ -311,7 +324,9 @@ class Person(Scraper):
                 size = ''
                 specialties = []
                 overview = main.find_elements(By.XPATH, "*")[1].find_element(By.XPATH, "*").find_elements(By.XPATH, "*")[0].find_elements(By.XPATH, "*")[0].find_element(By.XPATH, "*")
-                institution_overivew = overview.find_element(By.TAG_NAME, 'p').text
+                institution_overivew = overview.find_elements(By.TAG_NAME, 'p')
+                if len(institution_overivew) == 1:
+                    institution_overivew = institution_overivew[0].text
                 overview_item_headers = overview.find_element(By.TAG_NAME, "dl").find_elements(By.TAG_NAME, "dt")
                 overview_item_texts = overview.find_element(By.TAG_NAME, "dl").find_elements(By.TAG_NAME, "dd")
                 if len(overview_item_headers) > 1:

@@ -48,6 +48,7 @@ class Experience(Institution):
     duration: str = None
     location: str = None
     skills: List[str] = None
+    commitment: str = None
 
 @dataclass
 class Education(Institution):
@@ -55,7 +56,7 @@ class Education(Institution):
     to_date: str = None
     description: str = None
     degree: str = None
-
+    major: str = None
 
 @dataclass
 class Interest(Institution):
