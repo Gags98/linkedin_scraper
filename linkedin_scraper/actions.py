@@ -55,19 +55,14 @@ def login(driver, email=None, password=None, cookie = None, timeout=1000):
         button = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "button")))
         button.click()
 
-        result = solver.funcaptcha(sitekey=pk, url=surl, pageurl=driver.current_url)
-        print(result)
+        # result = solver.funcaptcha(sitekey=pk, url=surl, pageurl=driver.current_url)
+        # print(result)
 
-        driver.switch_to.window(original_window)
-        form = driver.find_element(By.ID,"captcha-challenge")
-        input = form.find_element(By.NAME,"captchaUserResponseToken")
-        driver.execute_script("arguments[0].setAttribute('value', '" + result["code"] + "')", input)
-        form.submit()
-
-    # if driver.current_url == 'https://www.linkedin.com/checkpoint/lg/login-submit':
-    #     remember = driver.find_element(By.ID,c.REMEMBER_PROMPT)
-    #     if remember:
-    #         remember.submit()
+        # driver.switch_to.window(original_window)
+        # form = driver.find_element(By.ID,"captcha-challenge")
+        # input = form.find_element(By.NAME,"captchaUserResponseToken")
+        # driver.execute_script("arguments[0].setAttribute('value', '" + result["code"] + "')", input)
+        # form.submit()
 
     element = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, c.VERIFY_LOGIN_ID)))
 

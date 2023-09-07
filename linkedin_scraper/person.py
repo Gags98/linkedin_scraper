@@ -150,15 +150,24 @@ class Person(Scraper):
                 if "·" in outer_positions[2].text:
                     position_title = outer_positions[0].find_element(By.TAG_NAME,"span").text
                     company = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                    if "·" in company:
+                        commitment = company.split(" · ")[1]
+                        company = company.split(" · ")[0]
                     work_times = outer_positions[2].find_element(By.TAG_NAME,"span").text
                     location = ""
                 else:
                     position_title = ""
                     company = outer_positions[0].find_element(By.TAG_NAME,"span").text
+                    if "·" in company:
+                        commitment = company.split(" · ")[1]
+                        company = company.split(" · ")[0]
                     work_times = outer_positions[1].find_element(By.TAG_NAME,"span").text
                     location = outer_positions[2].find_element(By.TAG_NAME,"span").text
             elif len(outer_positions) == 2:
                 company = outer_positions[0].find_element(By.TAG_NAME,"span").text
+                if "·" in company:
+                    commitment = company.split(" · ")[1]
+                    company = company.split(" · ")[0]
                 work_times = outer_positions[1].find_element(By.TAG_NAME,"span").text
 
             times = work_times.split("·")[0].strip() if work_times else ""
@@ -393,21 +402,23 @@ class Person(Scraper):
             outer_positions = position_summary_details.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
 
             institution_name = outer_positions[0].find_element(By.TAG_NAME,"span").text
-            degree = outer_positions[1].find_element(By.TAG_NAME,"span").text
             major = ""
+            degree = ""
+            if len(outer_positions) > 1:
+                degree = outer_positions[1].find_element(By.TAG_NAME,"span").text
 
-            if "Degree, " in degree:
-                major = degree.split("Degree, ")[1]
-                degree = degree.split(major)[0][:-2]
+                if "Degree, " in degree:
+                    major = degree.split("Degree, ")[1]
+                    degree = degree.split(major)[0][:-2]
 
-            if len(outer_positions) > 2:
-                times = outer_positions[2].find_element(By.TAG_NAME,"span").text
+                if len(outer_positions) > 2:
+                    times = outer_positions[2].find_element(By.TAG_NAME,"span").text
 
-                from_date = " ".join(times.split(" ")[:1])
-                to_date = " ".join(times.split(" ")[2:])
-            else:
-                from_date = None
-                to_date = None
+                    from_date = " ".join(times.split(" ")[:1])
+                    to_date = " ".join(times.split(" ")[2:])
+                else:
+                    from_date = None
+                    to_date = None
 
             description = position_summary_text.find_element(By.TAG_NAME,"span").text if position_summary_text else ""
 
@@ -494,24 +505,23 @@ class Person(Scraper):
         self.focus()
         self.wait(2)
 
-        # get name and location
         self.get_name_and_location()
 
         self.open_to_work = self.is_open_to_work()
 
         self.get_about()
 
-        self.get_contact_info()
-
-        self.get_experiences()
-
-        self.get_company_details()
-
-        self.get_educations()
-
-        self.get_skills()
-
-        self.get_languages()
+        # self.get_contact_info()
+        #
+        # self.get_experiences()
+        #
+        # self.get_company_details()
+        #
+        # self.get_educations()
+        #
+        # self.get_skills()
+        #
+        # self.get_languages()
 
     @property
     def company(self):
