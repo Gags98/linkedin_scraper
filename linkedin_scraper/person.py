@@ -13,7 +13,7 @@ import time
 class Person(Scraper):
 
     __TOP_CARD = "pv-top-card"
-    __WAIT_FOR_ELEMENT_TIMEOUT = 5
+    __WAIT_FOR_ELEMENT_TIMEOUT = 100
 
     def __init__(
         self,
@@ -119,123 +119,166 @@ class Person(Scraper):
         self.scroll_to_half()
         self.scroll_to_bottom()
         main_list = self.wait_for_element_to_load(name="pvs-list", base=main)
-        for position in main_list.find_elements(By.XPATH,"li"):
-            no_experience = self.driver.find_elements(By.CLASS_NAME, "artdeco-empty-state")
-            if len(no_experience) == 1:
-                break
-            position = position.find_element(By.CLASS_NAME,"pvs-entity")
-            company_logo_elem, position_details = position.find_elements(By.XPATH,"*")
+        if main_list is not None:
+            for position in main_list.find_elements(By.XPATH,"li"):
+                no_experience = self.driver.find_elements(By.CLASS_NAME, "artdeco-empty-state")
+                if len(no_experience) == 1:
+                    break
+                position = position.find_element(By.CLASS_NAME,"pvs-entity")
+                company_logo_elem, position_details = position.find_elements(By.XPATH,"*")
 
-            # company elem
-            company_linkedin_url = company_logo_elem.find_element(By.XPATH,"*").get_attribute("href")
-            self.company_urls.append(company_linkedin_url)
+                # company elem
+                company_linkedin_url = company_logo_elem.find_element(By.XPATH,"*").get_attribute("href")
+                self.company_urls.append(company_linkedin_url)
 
-            # position details
-            position_details_list = position_details.find_elements(By.XPATH,"*")
-            position_summary_details = position_details_list[0] if len(position_details_list) > 0 else None
-            position_summary_text = position_details_list[1] if len(position_details_list) > 1 else None
-            outer_positions = position_summary_details.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
+                # position details
+                position_details_list = position_details.find_elements(By.XPATH,"*")
+                position_summary_details = position_details_list[0] if len(position_details_list) > 0 else None
+                position_summary_text = position_details_list[1] if len(position_details_list) > 1 else None
+                outer_positions = position_summary_details.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
 
-            commitment = ""
+                commitment = ""
+                work_times = None
+                from_date = None
+                to_date = None
+                duration = None
+                location = None
+                commitment = None
 
-            if len(outer_positions) == 4:
-                position_title = outer_positions[0].find_element(By.TAG_NAME,"span").text
-                company = outer_positions[1].find_element(By.TAG_NAME,"span").text
-                if "·" in company:
-                    commitment = company.split(" · ")[1]
-                    company = company.split(" · ")[0]
-                work_times = outer_positions[2].find_element(By.TAG_NAME,"span").text
-                location = outer_positions[3].find_element(By.TAG_NAME,"span").text
-            elif len(outer_positions) == 3:
-                if "·" in outer_positions[2].text:
+                if len(outer_positions) == 4:
                     position_title = outer_positions[0].find_element(By.TAG_NAME,"span").text
                     company = outer_positions[1].find_element(By.TAG_NAME,"span").text
                     if "·" in company:
                         commitment = company.split(" · ")[1]
                         company = company.split(" · ")[0]
                     work_times = outer_positions[2].find_element(By.TAG_NAME,"span").text
-                    location = ""
-                else:
-                    position_title = ""
-                    company = outer_positions[0].find_element(By.TAG_NAME,"span").text
-                    if "·" in company:
-                        commitment = company.split(" · ")[1]
-                        company = company.split(" · ")[0]
-                    work_times = outer_positions[1].find_element(By.TAG_NAME,"span").text
-                    location = outer_positions[2].find_element(By.TAG_NAME,"span").text
-            elif len(outer_positions) == 2:
-                company = outer_positions[0].find_element(By.TAG_NAME,"span").text
-                if "·" in company:
-                    commitment = company.split(" · ")[1]
-                    company = company.split(" · ")[0]
-                work_times = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                    location = outer_positions[3].find_element(By.TAG_NAME,"span").text
+                elif len(outer_positions) == 3:
+                    if "·" in outer_positions[2].text:
+                        position_title = outer_positions[0].find_element(By.TAG_NAME,"span").text
+                        company = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                        if "·" in company:
+                            commitment = company.split(" · ")[1]
+                            company = company.split(" · ")[0]
+                        work_times = outer_positions[2].find_element(By.TAG_NAME,"span").text
+                        location = ""
+                    else:
+                        position_title = ""
+                        company = outer_positions[0].find_element(By.TAG_NAME,"span").text
+                        if "·" in company:
+                            commitment = company.split(" · ")[1]
+                            company = company.split(" · ")[0]
+                        work_times = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                        location = outer_positions[2].find_element(By.TAG_NAME,"span").text
+                elif len(outer_positions) == 2:
+                    second_line = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                    if " - " in second_line:
+                        company = outer_positions[0].find_element(By.TAG_NAME,"span").text
+                        if "·" in company:
+                            commitment = company.split(" · ")[1]
+                            company = company.split(" · ")[0]
+                        work_times = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                    else:
+                        position_title = outer_positions[0].find_element(By.TAG_NAME,"span").text
+                        company = outer_positions[1].find_element(By.TAG_NAME,"span").text
 
-            times = work_times.split("·")[0].strip() if work_times else ""
-            duration = work_times.split("·")[1].strip() if len(work_times.split("·")) > 1 else None
+                times = work_times.split("·")[0].strip() if work_times else ""
+                duration = work_times.split("·")[1].strip() if work_times and len(work_times.split("·")) > 1 else None
 
-            if " - " in times:
-                from_date = "".join(times.split(" - ")[0]) if times else ""
-                to_date = "".join(times.split(" - ")[1]) if times else ""
+                if " - " in times:
+                    from_date = "".join(times.split(" - ")[0]) if times else ""
+                    to_date = "".join(times.split(" - ")[1]) if times else ""
 
-            if position_summary_text is None:
-                experience = Experience(
-                    position_title=position_title,
-                    from_date=from_date,
-                    to_date=to_date,
-                    duration=duration,
-                    location=location,
-                    institution_name=company,
-                    linkedin_url=company_linkedin_url,
-                    commitment=commitment
-                )
-                self.add_experience(experience)
-            # the following elif controls the positions which are in the same company and follow each other, i.e. a list of positions in a company
-            elif position_summary_text and len(position_summary_text.find_element(By.CLASS_NAME,"pvs-list").find_element(By.CLASS_NAME,"pvs-list").find_elements(By.XPATH,"li")) > 1:
-                descriptions = position_summary_text.find_element(By.CLASS_NAME,"pvs-list").find_element(By.CLASS_NAME,"pvs-list").find_elements(By.XPATH,"li")
-                for description in descriptions:
-                    temp_desc = ""
-                    skills = []
-                    res = description.find_element(By.TAG_NAME,"a").find_elements(By.XPATH,"*")
-                    position_title_elem = res[0].find_element(By.TAG_NAME,"span").text
-                    work_times_elem = None
-                    location_elem = None
-                    if len(res) == 4:
-                        commitment = res[1].find_element(By.XPATH,"*").text
-                        work_times_elem = res[2] if len(res) > 2 else None
-                        location_elem = res[3] if len(res) > 3 else None
-                    elif len(res) == 3:
-                        if "·" in res[1].find_element(By.XPATH,"*").text:
-                            work_times_elem = res[1]
-                            location_elem = res[2]
-                        elif "·" in res[2].find_element(By.XPATH,"*").text:
+                temp = position_summary_text.find_element(By.CLASS_NAME,"pvs-list").find_elements(By.CLASS_NAME,"pvs-list") if position_summary_text else None
+
+                if position_summary_text is None:
+                    experience = Experience(
+                        position_title=position_title,
+                        from_date=from_date if from_date else "",
+                        to_date=to_date if to_date else "",
+                        duration=duration if duration else "",
+                        location=location,
+                        institution_name=company,
+                        linkedin_url=company_linkedin_url,
+                        commitment=commitment
+                    )
+                    self.add_experience(experience)
+                # the following elif controls the positions which are in the same company and follow each other, i.e. a list of positions in a company
+                elif position_summary_text and temp is not None and len(temp) > 0 and len(temp[0].find_elements(By.XPATH,"li")) > 1:
+                    descriptions = position_summary_text.find_element(By.CLASS_NAME,"pvs-list").find_element(By.CLASS_NAME,"pvs-list").find_elements(By.XPATH,"li")
+                    for description in descriptions:
+                        temp_desc = ""
+                        skills = []
+                        res = description.find_element(By.TAG_NAME,"a").find_elements(By.XPATH,"*")
+                        position_title_elem = res[0].find_element(By.TAG_NAME,"span").text
+                        work_times_elem = None
+                        location_elem = None
+                        if len(res) == 4:
                             commitment = res[1].find_element(By.XPATH,"*").text
-                            work_times_elem = res[2]
-                    elif len(res) == 2:
-                        if "·" in res[1].find_element(By.XPATH,"*").text:
-                            work_times_elem = res[1]
+                            work_times_elem = res[2] if len(res) > 2 else None
+                            location_elem = res[3] if len(res) > 3 else None
+                        elif len(res) == 3:
+                            if "·" in res[1].find_element(By.XPATH,"*").text:
+                                work_times_elem = res[1]
+                                location_elem = res[2]
+                            elif "·" in res[2].find_element(By.XPATH,"*").text:
+                                commitment = res[1].find_element(By.XPATH,"*").text
+                                work_times_elem = res[2]
+                        elif len(res) == 2:
+                            if "·" in res[1].find_element(By.XPATH,"*").text:
+                                work_times_elem = res[1]
 
-                    temp = description.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")
-                    if len(temp) > 1:
-                        temp1 = temp[1].find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
-                        if len(temp1) > 1:
-                            temp_desc = temp1[0].find_element(By.TAG_NAME,"span").text
-                            skills = temp1[1].find_element(By.TAG_NAME,"span").text[8:].split("·")
-                            skills = [skills.strip() for skills in skills]
-                        elif len(temp1) == 1:
-                            text = temp1[0].find_element(By.TAG_NAME,"span").text
-                            if text.startswith("Skills:"):
-                                skills = text[8:].split("·")
+                        temp = description.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")[1].find_elements(By.XPATH,"*")
+                        if len(temp) > 1:
+                            temp1 = temp[1].find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
+                            if len(temp1) > 1:
+                                temp_desc = temp1[0].find_element(By.TAG_NAME,"span").text
+                                skills = temp1[1].find_element(By.TAG_NAME,"span").text[8:].split("·")
                                 skills = [skills.strip() for skills in skills]
-                            else:
-                                temp_desc = text
+                            elif len(temp1) == 1:
+                                text = temp1[0].find_element(By.TAG_NAME,"span").text
+                                if text.startswith("Skills:"):
+                                    skills = text[8:].split("·")
+                                    skills = [skills.strip() for skills in skills]
+                                else:
+                                    temp_desc = text
 
-                    location = location_elem.find_element(By.XPATH,"*").text if location_elem else None
-                    position_title = position_title_elem
-                    work_times = work_times_elem.find_element(By.XPATH,"*").text if work_times_elem else ""
-                    times = work_times.split("·")[0].strip() if work_times else ""
-                    duration = work_times.split("·")[1].strip() if len(work_times.split("·")) > 1 else None
-                    from_date = " ".join(times.split(" ")[:2]) if times else ""
-                    to_date = " ".join(times.split(" ")[3:]) if times else ""
+                        location = location_elem.find_element(By.XPATH,"*").text if location_elem else None
+                        position_title = position_title_elem
+                        work_times = work_times_elem.find_element(By.XPATH,"*").text if work_times_elem else ""
+                        times = work_times.split("·")[0].strip() if work_times else ""
+                        duration = work_times.split("·")[1].strip() if len(work_times.split("·")) > 1 else None
+                        from_date = " ".join(times.split(" ")[:2]) if times else ""
+                        to_date = " ".join(times.split(" ")[3:]) if times else ""
+
+                        experience = Experience(
+                            position_title=position_title,
+                            from_date=from_date,
+                            to_date=to_date,
+                            duration=duration,
+                            location=location,
+                            description=temp_desc,
+                            institution_name=company,
+                            linkedin_url=company_linkedin_url,
+                            skills=skills,
+                            commitment=commitment
+                        )
+                        self.add_experience(experience)
+                else:
+                    temp = position_summary_text.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
+                    skills = []
+                    temp_desc = ""
+                    if len(temp) > 1:
+                        temp_desc = temp[0].find_element(By.TAG_NAME,"span").text
+                        skills = temp[1].find_element(By.TAG_NAME,"span").text[8:].split("·")
+                        skills = [skills.strip() for skills in skills]
+                    elif len(temp) == 1:
+                        text = temp[0].find_element(By.TAG_NAME,"span").text
+                        if text.startswith("Skills:"):
+                            skills = text[8:].split("·")
+                            skills = [skills.strip() for skills in skills]
+                        else:
+                            temp_desc = text
 
                     experience = Experience(
                         position_title=position_title,
@@ -250,39 +293,10 @@ class Person(Scraper):
                         commitment=commitment
                     )
                     self.add_experience(experience)
-            else:
-                temp = position_summary_text.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
-                skills = []
-                temp_desc = ""
-                if len(temp) > 1:
-                    temp_desc = temp[0].find_element(By.TAG_NAME,"span").text
-                    skills = temp[1].find_element(By.TAG_NAME,"span").text[8:].split("·")
-                    skills = [skills.strip() for skills in skills]
-                elif len(temp) == 1:
-                    text = temp[0].find_element(By.TAG_NAME,"span").text
-                    if text.startswith("Skills:"):
-                        skills = text[8:].split("·")
-                        skills = [skills.strip() for skills in skills]
-                    else:
-                        temp_desc = text
-
-                experience = Experience(
-                    position_title=position_title,
-                    from_date=from_date,
-                    to_date=to_date,
-                    duration=duration,
-                    location=location,
-                    description=temp_desc,
-                    institution_name=company,
-                    linkedin_url=company_linkedin_url,
-                    skills=skills,
-                    commitment=commitment
-                )
-                self.add_experience(experience)
 
     def get_company_details(self):
         for url in self.company_urls:
-            if "linkedin.com/company" in url:
+            if url is not None and "linkedin.com/company" in url:
                 self.driver.get(url + '/about/')
                 self.focus()
                 WebDriverWait(self.driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until( lambda driver:
@@ -344,10 +358,10 @@ class Person(Scraper):
                             website = overview_item_texts[index].text
                         elif 'Company size' in header.text:
                             size = overview_item_texts[index].text
-                if 'Specialties' in overview_item_headers[-1].text:
-                    specialties = overview_item_texts[-1].text.split(', ')
-                    if specialties[-1].startswith("and "):
-                        specialties[-1] = specialties[-1][4:]
+                    if 'Specialties' in overview_item_headers[-1].text:
+                        specialties = overview_item_texts[-1].text.split(', ')
+                        if specialties[-1].startswith("and "):
+                            specialties[-1] = specialties[-1][4:]
                 side = self.wait_for_element_to_load(by=By.ID, name="org-right-rail")
                 funding = side.find_elements(By.CLASS_NAME, "org-funding__card-spacing")
                 funding_title = ''
@@ -388,50 +402,53 @@ class Person(Scraper):
         main = self.wait_for_element_to_load(by=By.TAG_NAME, name="main")
         self.scroll_to_half()
         self.scroll_to_bottom()
+
         main_list = self.wait_for_element_to_load(name="pvs-list", base=main)
-        for position in main_list.find_elements(By.CLASS_NAME,"pvs-entity"):
-            institution_logo_elem, position_details = position.find_elements(By.XPATH,"*")
+        if main_list is not None:
+            for position in main_list.find_elements(By.CLASS_NAME,"pvs-entity"):
+                institution_logo_elem, position_details = position.find_elements(By.XPATH,"*")
 
-            # company elem
-            institution_linkedin_url = institution_logo_elem.find_element(By.XPATH,"*").get_attribute("href")
+                # company elem
+                institution_linkedin_url = institution_logo_elem.find_element(By.XPATH,"*").get_attribute("href")
 
-            # position details
-            position_details_list = position_details.find_elements(By.XPATH,"*")
-            position_summary_details = position_details_list[0] if len(position_details_list) > 0 else None
-            position_summary_text = position_details_list[1] if len(position_details_list) > 1 else None
-            outer_positions = position_summary_details.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
+                # position details
+                position_details_list = position_details.find_elements(By.XPATH,"*")
+                position_summary_details = position_details_list[0] if len(position_details_list) > 0 else None
+                position_summary_text = position_details_list[1] if len(position_details_list) > 1 else None
+                outer_positions = position_summary_details.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
 
-            institution_name = outer_positions[0].find_element(By.TAG_NAME,"span").text
-            major = ""
-            degree = ""
-            if len(outer_positions) > 1:
-                degree = outer_positions[1].find_element(By.TAG_NAME,"span").text
+                institution_name = outer_positions[0].find_element(By.TAG_NAME,"span").text
+                major = ""
+                degree = ""
+                from_date = None
+                to_date = None
+                if len(outer_positions) > 1:
+                    degree = outer_positions[1].find_element(By.TAG_NAME,"span").text
 
-                if "Degree, " in degree:
-                    major = degree.split("Degree, ")[1]
-                    degree = degree.split(major)[0][:-2]
+                    if "Degree, " in degree:
+                        major = degree.split("Degree, ")[1]
+                        degree = degree.split(major)[0][:-2]
 
-                if len(outer_positions) > 2:
-                    times = outer_positions[2].find_element(By.TAG_NAME,"span").text
+                    if len(outer_positions) > 2:
+                        times = outer_positions[2].find_element(By.TAG_NAME,"span").text
 
-                    from_date = " ".join(times.split(" ")[:1])
-                    to_date = " ".join(times.split(" ")[2:])
-                else:
-                    from_date = None
-                    to_date = None
+                        from_date = " ".join(times.split(" ")[:1])
+                        to_date = " ".join(times.split(" ")[2:])
 
-            description = position_summary_text.find_element(By.TAG_NAME,"span").text if position_summary_text else ""
+                description = ""
+                if position_summary_text and len(position_summary_text.find_elements(By.TAG_NAME,"span")) > 0:
+                    description = position_summary_text.find_element(By.TAG_NAME,"span").text
 
-            education = Education(
-                from_date=from_date,
-                to_date=to_date,
-                description=description,
-                degree=degree,
-                institution_name=institution_name,
-                linkedin_url=institution_linkedin_url,
-                major=major
-            )
-            self.add_education(education)
+                education = Education(
+                    from_date=from_date,
+                    to_date=to_date,
+                    description=description,
+                    degree=degree,
+                    institution_name=institution_name,
+                    linkedin_url=institution_linkedin_url,
+                    major=major
+                )
+                self.add_education(education)
 
     def get_skills(self):
         url = os.path.join(self.linkedin_url, "details/skills")
@@ -511,17 +528,17 @@ class Person(Scraper):
 
         self.get_about()
 
-        # self.get_contact_info()
-        #
-        # self.get_experiences()
-        #
-        # self.get_company_details()
-        #
-        # self.get_educations()
-        #
-        # self.get_skills()
-        #
-        # self.get_languages()
+        self.get_contact_info()
+
+        self.get_experiences()
+
+        self.get_company_details()
+
+        self.get_educations()
+
+        self.get_skills()
+
+        self.get_languages()
 
     @property
     def company(self):

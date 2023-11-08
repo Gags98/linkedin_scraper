@@ -25,7 +25,7 @@ def login(driver, email=None, password=None, cookie = None, timeout=1000):
         email, password = __prompt_email_password()
 
     driver.get("https://www.linkedin.com/login")
-    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "username")))
+    element = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "username")))
 
     email_elem = driver.find_element(By.ID,"username")
     email_elem.send_keys(email)
@@ -34,26 +34,32 @@ def login(driver, email=None, password=None, cookie = None, timeout=1000):
     password_elem.send_keys(password)
     password_elem.submit()
 
-    if "https://www.linkedin.com/checkpoint/challenge" in driver.current_url:
-        original_window = driver.current_window_handle
-        first_main = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "main")))
-        first_iframe = first_main.find_element(By.TAG_NAME,"iframe")
-        driver.switch_to.frame(first_iframe)
-        second_main = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "main")))
-        second_iframe = second_main.find_element(By.TAG_NAME,"iframe")
-        driver.switch_to.frame(second_iframe)
-        third_iframe = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
-        driver.switch_to.frame(third_iframe)
-        fourth_iframe = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
-        fc_token = driver.find_element(By.ID,"FunCaptcha-Token").get_attribute("value").split('|')
-        for item in fc_token:
-            if item.startswith("pk="):
-                pk = item[3:]
-            elif item.startswith("surl="):
-                surl = item[5:]
-        driver.switch_to.frame(fourth_iframe)
-        button = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "button")))
-        button.click()
+    # if "https://www.linkedin.com/checkpoint/challenge" in driver.current_url:
+    #     print('captcha')
+    #     solve_res = driver.execute('executeCdpCommand', {
+    #         'cmd': 'Captcha.waitForSolve',
+    #         'params': {'detectTimeout': 10000},
+    #     })
+    #     print('Captcha solve status:', solve_res['value']['status'])
+        # original_window = driver.current_window_handle
+        # first_main = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "main")))
+        # first_iframe = first_main.find_element(By.TAG_NAME,"iframe")
+        # driver.switch_to.frame(first_iframe)
+        # second_main = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "main")))
+        # second_iframe = second_main.find_element(By.TAG_NAME,"iframe")
+        # driver.switch_to.frame(second_iframe)
+        # third_iframe = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
+        # driver.switch_to.frame(third_iframe)
+        # fourth_iframe = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
+        # fc_token = driver.find_element(By.ID,"FunCaptcha-Token").get_attribute("value").split('|')
+        # for item in fc_token:
+        #     if item.startswith("pk="):
+        #         pk = item[3:]
+        #     elif item.startswith("surl="):
+        #         surl = item[5:]
+        # driver.switch_to.frame(fourth_iframe)
+        # button = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "button")))
+        # button.click()
 
         # result = solver.funcaptcha(sitekey=pk, url=surl, pageurl=driver.current_url)
         # print(result)

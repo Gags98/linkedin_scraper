@@ -4,7 +4,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
 from .objects import Scraper
 from .person import Person
 import time
@@ -208,7 +207,7 @@ class Company(Scraper):
             section_id = 3
        #section ID is no longer needed, we are using class name now.
         #grid = driver.find_elements_by_tag_name("section")[section_id]
-        grid = driver.find_element(By.CLASS_NAME, "artdeco-card.org-page-details-module__card-spacing.artdeco-card.org-about-module__margin-bottom")
+        grid = driver.find_element(By.CLASS_NAME, "artdeco-card.p5.mb4")
         print(grid)
         descWrapper = grid.find_elements(By.TAG_NAME, "p")
         if len(descWrapper) > 0:
@@ -239,15 +238,12 @@ class Company(Scraper):
             elif txt == 'Specialties':
                 self.specialties = "\n".join(values[i+x_off].text.strip().split(", "))
 
-        try:
-            grid = driver.find_element(By.CLASS_NAME, "mt1")
-            spans = grid.find_elements(By.TAG_NAME, "span")
-            for span in spans:
-                txt = span.text.strip()
-                if "See all" in txt and "employees on LinkedIn" in txt:
-                    self.headcount = int(txt.replace("See all", "").replace("employees on LinkedIn", "").strip())
-        except NoSuchElementException: # Does not exist in page, skip it
-            pass
+        grid = driver.find_element(By.CLASS_NAME, "mt1")
+        spans = grid.find_elements(By.TAG_NAME, "span")
+        for span in spans:
+            txt = span.text.strip()
+            if "See all" in txt and "employees on LinkedIn" in txt:
+                self.headcount = int(txt.replace("See all", "").replace("employees on LinkedIn", "").strip())
 
         driver.execute_script("window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));")
 
@@ -360,6 +356,5 @@ class Company(Scraper):
         _output['affiliated_companies'] = self.affiliated_companies
         _output['employees'] = self.employees
         _output['headcount'] = self.headcount
-        
-        return json.dumps(_output).replace('\n', '')
 
+        return json.dumps(_output).replace('\n', '')

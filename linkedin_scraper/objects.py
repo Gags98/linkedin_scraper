@@ -72,7 +72,7 @@ class Accomplishment(Institution):
 @dataclass
 class Scraper:
     driver: Chrome = None
-    WAIT_FOR_ELEMENT_TIMEOUT = 5
+    WAIT_FOR_ELEMENT_TIMEOUT = 30
     TOP_CARD = "pv-top-card"
 
     @staticmethod
@@ -89,26 +89,31 @@ class Scraper:
 
     def wait_for_element_to_load(self, by=By.CLASS_NAME, name="pv-top-card", base=None):
         base = base or self.driver
-        return WebDriverWait(base, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
-            EC.presence_of_element_located(
-                (
-                    by,
-                    name
+        try:
+            return WebDriverWait(base, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
+                EC.presence_of_element_located(
+                    (
+                        by,
+                        name
+                    )
                 )
             )
-        )
+        except:
+            return None
 
     def wait_for_all_elements_to_load(self, by=By.CLASS_NAME, name="pv-top-card", base=None):
         base = base or self.driver
-        return WebDriverWait(base, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
-            EC.presence_of_all_elements_located(
-                (
-                    by,
-                    name
+        try:
+            return WebDriverWait(base, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
+                EC.presence_of_all_elements_located(
+                    (
+                        by,
+                        name
+                    )
                 )
             )
-        )
-
+        except:
+            return None
 
     def is_signed_in(self):
         try:
