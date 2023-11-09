@@ -124,7 +124,7 @@ class Person(Scraper):
                 no_experience = self.driver.find_elements(By.CLASS_NAME, "artdeco-empty-state")
                 if len(no_experience) == 1:
                     break
-                position = position.find_element(By.CLASS_NAME,"pvs-entity")
+                position = position.find_element(By.CLASS_NAME,"pvs-entity--padded")
                 company_logo_elem, position_details = position.find_elements(By.XPATH,"*")
 
                 # company elem
@@ -405,7 +405,7 @@ class Person(Scraper):
 
         main_list = self.wait_for_element_to_load(name="pvs-list", base=main)
         if main_list is not None:
-            for position in main_list.find_elements(By.CLASS_NAME,"pvs-entity"):
+            for position in main_list.find_elements(By.CLASS_NAME,"pvs-entity--padded"):
                 institution_logo_elem, position_details = position.find_elements(By.XPATH,"*")
 
                 # company elem
@@ -483,9 +483,8 @@ class Person(Scraper):
                 self.languages.append(language)
 
     def get_name_and_location(self):
-        top_panels = self.driver.find_elements(By.CLASS_NAME,"pv-text-details__left-panel")
-        self.name = top_panels[0].find_elements(By.XPATH,"*")[0].find_element(By.TAG_NAME,"h1").text
-        self.location = top_panels[1].find_elements(By.XPATH,"*")[0].text
+        self.name = self.driver.find_element(By.CLASS_NAME,"artdeco-hoverable-trigger").find_element(By.TAG_NAME,"h1").text
+        self.location = self.driver.find_element(By.CSS_SELECTOR,".text-body-small.inline.t-black--light").text
 
     def get_contact_info(self):
         contact_info_span = self.driver.find_element(By.ID,"top-card-text-details-contact-info")
